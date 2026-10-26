@@ -31,3 +31,20 @@ class Block:
         
         # Return the final hash as a readable string of characters
         return hash_object.hexdigest()
+    
+    def mine_block(self, difficulty):
+        # Define what a correct hash looks like based on the difficulty level
+        target_string = "0" * difficulty
+        
+        # Keep trying different nonce values until we find a hash that meets the difficulty requirement
+        while self.hash[:difficulty] != target_string:
+            # Increment the nonce to change the hash
+            self.nonce += 1
+            
+            # Recalculate the hash with the new nonce value
+            self.hash = self.calculate_hash()
+            
+        # Print a message indicating that the block has been successfully mined
+        print(f"Blocked mined successfully: {self.hash}")
+        
+        
