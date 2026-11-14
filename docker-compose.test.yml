@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  mongo-test:
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+
+  app-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - MONGO_URI=mongodb://mongo-test:27017/
+      - DB_NAME=genesis_test_db
+    depends_on:
+      - mongo-test
