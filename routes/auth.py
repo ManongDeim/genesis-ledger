@@ -2,6 +2,7 @@ import datetime
 import random
 import smtplib
 from email.mime.text import MIMEText
+from functools import wraps
 
 import jwt
 from flask import Blueprint, jsonify, request
@@ -85,3 +86,24 @@ def forgot_password():
         server.sendmail(msg['From'], [msg['To']], msg.as_string())
         
     return jsonify({"message": "Password reset PIN sent to email"}), 200
+
+def token_required (f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split("")[1]
+            
+        if not token:
+            return jsonify({"error": "Token is missing!"}), 401
+        
+        try:
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            current_user = data["username"]
+        except Exception as e:
+            return jsonify({"error": "Token is invalid or expired"}), 401
+        
+        
+        return f(current_user, *args, **kwargs)
+    return decorated

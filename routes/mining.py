@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request
 from core.block import Block
 from core.blockchain import Blockchain
 from db import db
+from routes.auth import token_required
 
 #Define BLUEPRINT
 mining_bp = Blueprint('mining', __name__)
@@ -16,21 +17,22 @@ my_coin = Blockchain()
 # Mining Module Logic
 
 @mining_bp.route('/api/transactions', methods=['GET'])
-def get_transactions():
+def get_transactions(current_user):
     # React loads the UI tables
-    pending = list(mempool.find({}, {"_id": 0}))
-    completed = list(completed_collection.find({}, {"_id": 0}))
+    pending = list(mempool.find({"username": current_user}, {"_id": 0}))
+    completed = list(completed_collection.find({"username": current_user}, {"_id": 0}))
     return jsonify({
         "pending": pending,
         "completed": completed
     })
 
 @mining_bp.route('/api/add', methods=['POST'])
-def add_transaction():
+def add_transaction(current_user):
     data = request.json
     # Create a transaction dictionary
     transaction = {
         "transaction_id": uuid.uuid4().hex,  # Generate a unique transaction ID
+        "username": current_user,
         "sender": data.get("sender"),
         "receiver": data.get("receiver"),
         "amount": data.get("amount")
@@ -40,9 +42,9 @@ def add_transaction():
     return jsonify({"message": "Transaction queued"})
 
 @mining_bp.route('/api/mine', methods=['POST'])
-def mine_button_clicked():
+def mine_button_clicked(current_user):
     # Fetch all pending transactions from the mempool
-    pending_transactions = list(mempool.find({}, {"_id": 0}))
+    pending_transactions = list(mempool.find({"username": current_user}, {"_id": 0}))
     
     if pending_transactions:
         # Create new block
@@ -56,7 +58,7 @@ def mine_button_clicked():
         # Store completed transactions in the completed_transactions collection
         completed_collection.insert_many(pending_transactions)
         # Clear the mempool after mining
-        mempool.delete_many({})
+        mempool.delete_many({"username": current_user})
         return jsonify({"message": "Block mined successfully", "block_id": final_block_id})
         
     
